@@ -104,7 +104,7 @@ def main(args):
         pub.publish(compress_img)
         # except:
         #     pass
-        # rate.sleep()
+        rate.sleep()
 
 if __name__=="__main__":
     args = parser()   
