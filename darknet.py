@@ -25,6 +25,7 @@ from ctypes import *
 import math
 import random
 import os
+from pathlib import Path
 
 
 class BOX(Structure):
@@ -79,6 +80,9 @@ def bbox2points(bbox):
     to corner points cv2 rectangle
     """
     x, y, w, h = bbox
+    # print ("x: ", x)
+    # print ("h: ", h)
+    # print("bbox:", bbox)
     xmin = int(round(x - (w / 2)))
     xmax = int(round(x + (w / 2)))
     ymin = int(round(y - (h / 2)))
@@ -130,12 +134,15 @@ def print_detections(detections, coordinates=False):
 
 def draw_boxes(detections, image, colors):
     import cv2
+    import numpy as np
     for label, confidence, bbox in detections:
-        left, top, right, bottom = bbox2points(bbox)
-        cv2.rectangle(image, (left, top), (right, bottom), colors[label], 1)
-        cv2.putText(image, "{} [{:.2f}]".format(label, float(confidence)),
-                    (left, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                    colors[label], 2)
+        flag = all(np.isinf(bbox))
+        if not flag:
+            left, top, right, bottom = bbox2points(bbox)
+            cv2.rectangle(image, (left, top), (right, bottom), colors[label], 1)
+            cv2.putText(image, "{} [{:.2f}]".format(label, float(confidence)),
+                        (left, top - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        colors[label], 2)
     return image
 
 
@@ -220,9 +227,7 @@ if os.name == "nt":
             lib = CDLL(winGPUdll, RTLD_GLOBAL)
             print("Environment variables indicated a CPU run, but we didn't find {}. Trying a GPU run anyway.".format(winNoGPUdll))
 else:
-    lib = CDLL(os.path.join(
-        os.environ.get('DARKNET_PATH', './'),
-        "libdarknet.so"), RTLD_GLOBAL)
+    lib = CDLL(str(Path(__file__).parent.joinpath("libdarknet.so")), RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
