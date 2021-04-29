@@ -131,6 +131,14 @@ def tuple2list(t):
 
 def main(args):
     global new_shape
+    print(os.path.exists(args.weights))
+    if not os.path.exists(args.weights):
+        print("Invalid weight path {}".format(os.path.abspath(args.weights)))
+        print("1. download weights for tiny-4 from this link: \n"
+              "https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights \n\n"
+              "2. Allocate the weights in {}/data/???.weights \n\n"
+              "You can also visit darknet git for more instructions: https://github.com/AlexeyAB/darknet".format(str(Path(__file__).parent)))
+        return
     network, class_names, class_colors = darknet.load_network(args.config_file, args.data_file,
                                             args.weights,batch_size=args.batch_size)
 
@@ -140,18 +148,18 @@ def main(args):
     rospy.wait_for_message(args.camera_topic, CompressedImage)
 
     while not rospy.is_shutdown():
-        image, detections = video_prossecing(network,class_names, class_colors)
+        image, detections = video_prossecing(network, class_names, class_colors)
         compress_img = createCompresseImage(image)
         detections = tuple2list(detections)
-        detections = detection_tf(image.shape,new_shape, detections) 
-        #print_img(detections) # For testing the TF.
+        detections = detection_tf(image.shape, new_shape, detections)
+        # print_img(detections) # For testing the TF.
         pub.publish(compress_img)
         detection_publish(detections, detection_publisher)
         rate.sleep()
 
 
 if __name__ == "__main__":
-    args = parser()   
+    args = parser()
     rospy.init_node("wrapper_yolo4_tiny",anonymous=True)
     rospy.Subscriber(args.camera_topic, CompressedImage, img_lisner, queue_size=1)
     main(args)
