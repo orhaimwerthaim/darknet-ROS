@@ -16,12 +16,12 @@ from obj_detector.msg import Detection_msg
 #from cv_bridge import CvBridge, CvBridgeError
 
 #---------------------- Discription ----------------------\
-# Subscribe to camera topic and run Yolo4-tiny to detect items. Then 
+# Subscribe to camera topic and run Yolo4-tiny to detect items. Then
 # the node publish two topics:
-# image with boundaries box 
+# image with boundaries box
 # detection massage with the field: [header, class id, score, pose [x_center, y_center, size_x, size_y]] 
 # Yolo is changing the image resolution, therefore there is transformation back to armdillo camera resolution.
- 
+
 
 global img, count, new_shape
 
@@ -36,7 +36,7 @@ def parser():
                         help="Frame rate in Hz")
     parser.add_argument("--batch_size", default=1, type=int,
                         help="number of images to be processed at the same time")
-    parser.add_argument("--weights", default="data/yolov4-tiny.weights",
+    parser.add_argument("--weights", default="data/yolov4.weights",
                         help="yolo weights path")
     parser.add_argument("--dont_show", action='store_true',
                         help="windown inference display. For headless systems")
@@ -44,7 +44,7 @@ def parser():
                         help="display bbox coordinates of detected objects")
     parser.add_argument("--save_labels", action='store_true',
                         help="save detections bbox for each image in yolo format")
-    parser.add_argument("--config_file", default=str(Path(__file__).parent)+"/cfg/yolov4-tiny.cfg",
+    parser.add_argument("--config_file", default=str(Path(__file__).parent)+"/cfg/yolov4.cfg",
                         help="path to config file")
     parser.add_argument("--data_file", default=str(Path(__file__).parent)+"/cfg/coco.data",
                         help="path to data file")
@@ -100,15 +100,17 @@ def detection_publish(detections, publisher):
         obj_msg.pose.size_y = detection[2][3]
         publisher.publish(obj_msg)
 
+
 def detection_tf(old_shape, new_shape, detections):
-        # Transformation of detections from Yolo resolution to armadillo. 
-        height_factor = new_shape[0] / old_shape[0]
-        width_factor =  new_shape[1] / old_shape[1]
-        detect_tf = lambda detect: [detect[2][0]*width_factor, detect[2][1]*height_factor,
-                                        detect[2][2]*width_factor, detect[2][3]*height_factor] 
-        for i in range(len(detections)):
-            detections[i][2] = detect_tf(detections[i])
-        return detections
+    # Transformation of detections from Yolo resolution to armadillo. 
+    height_factor = new_shape[0] / old_shape[0]
+    width_factor = new_shape[1] / old_shape[1]
+    detect_tf = lambda detect: [detect[2][0]*width_factor, detect[2][1]*height_factor,
+                                detect[2][2]*width_factor, detect[2][3]*height_factor] 
+    for i in range(len(detections)):
+        detections[i][2] = detect_tf(detections[i])
+    return detections
+
 
 def print_img(detections):
     # This function is for testing the TF from yolo to armadillo camera.
@@ -122,8 +124,10 @@ def print_img(detections):
     cv2.imshow('img',frame)
     cv2.waitKey(1)
 
+
 def tuple2list(t):
     return list(map(tuple2list,t)) if isinstance(t, (tuple, list)) else t
+
 
 def main(args):
     global new_shape
@@ -146,9 +150,8 @@ def main(args):
         rate.sleep()
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     args = parser()   
     rospy.init_node("wrapper_yolo4_tiny",anonymous=True)
     rospy.Subscriber(args.camera_topic, CompressedImage, img_lisner, queue_size=1)
     main(args)
-    
