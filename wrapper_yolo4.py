@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
+sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import numpy as np
 from sensor_msgs.msg import CompressedImage
 import darknet
